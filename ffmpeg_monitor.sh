@@ -46,8 +46,15 @@ while true; do
         # Wait for a while before checking CPU utilization
         sleep ${DEBOUNCE_PERIOD_SEC}
 
-        # Get CPU utilization of ffmpeg process
+        # Try to find the ffmpeg process spawned by the script
         ffmpeg_pid=$(pgrep --parent ${ffmpeg_script_pid})
+        if [ $? -ne 0 ]; then
+            # The script has not spawned a child process, it is probably busy
+            # doing something else
+            break
+        fi
+
+        # Get CPU utilization of ffmpeg process
         cpu_utilization=$(top -b -n 1 -p ${ffmpeg_pid} | grep "${ffmpeg_pid}" | awk '{print $9}' | tr ',' '.')
 
         if [ "$(echo "$cpu_utilization < $CPU_THRESHOLD_PERCENT" | bc)" -eq 1 ]; then
