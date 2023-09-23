@@ -30,7 +30,10 @@ while true; do
     while [ "$(ls -1 "${OUTPUT_FILENAME}"* 2> /dev/null | wc -l)" -gt "${MAX_RECORDINGS}" ]; do
         oldest_recording=$(ls -t "${OUTPUT_FILENAME}"* | tail -n 1)
         log "Removing old recording: ${oldest_recording}"
-        rm "${oldest_recording}"
+        if ! rm "${oldest_recording}"; then
+            log "Failed to remove recording!"
+            break;
+        fi
     done
 
     recording_file="${OUTPUT_FILENAME}$(date +'%Y-%m-%d_%H:%M:%S').mp4"
