@@ -4,10 +4,11 @@ ffmpeg_script_pid=0
 readonly FFMPEG_SCRIPT="./ffmpeg_rtsp_recorder.sh" # Path to the script using ffmpeg
 
 kill-ffmpeg() {
-    # Forcefully terminate ffmpeg process
+    # Forcefully terminate ffmpeg process and the script that launched it
     ffmpeg_pid=$(pgrep --parent ${ffmpeg_script_pid})
-    kill -9 ${ffmpeg_pid}
-
+    if [ $? -eq 0 ]; then
+        kill -9 ${ffmpeg_pid}
+    fi
     kill -9 ${ffmpeg_script_pid}
 }
 
