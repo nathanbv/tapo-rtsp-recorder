@@ -27,6 +27,18 @@ removed.
 1. Update the `RTSP_URL` in `ffmpeg_rtsp_recorder.sh` with these informations
 1. Launch the monitor script: `./ffmpeg_monitor.sh`
 
+## Install
+A systemd service file is provided to easily install and run the script. And to easily install the service a script is also provided!
+```shell
+sudo ./install.sh
+# You can configure your installation with (see default values in install.sh):
+sudo \
+  INSTALL_TARGET_USER="${USER}" \
+  DEST_PATH="${HOME}/.bin/cam/" \
+  LOG_PATH="${HOME}/.bin/cam/logs/" \
+  ./install.sh
+```
+
 ## RTSP disconnection, ffmpeg hanging and corrupted file
 If the camera is electrically unplugged and `ffmpeg` was already connected to
 the RTSP stream it might hang indefinitely. A monitor script has the

@@ -1,0 +1,15 @@
+[Unit]
+Description=Tapo C200 RTSP live video stream recorder
+Documentation=https://github.com/nathanbv/tapo-rtsp-recorder
+
+[Service]
+User=%INSTALL_TARGET_USER%
+Group=%INSTALL_TARGET_USER%
+
+ExecStart=/bin/bash -c "%DEST_PATH%/ffmpeg_monitor.sh"
+
+StandardOutput=append:%LOG_PATH%/output.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
