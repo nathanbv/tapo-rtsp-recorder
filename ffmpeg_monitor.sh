@@ -18,13 +18,13 @@ kill-ffmpeg() {
     # Forcefully terminate ffmpeg process and the script that launched it
     ffmpeg_pid=$(pgrep --parent ${ffmpeg_script_pid})
     if [ $? -eq 0 ]; then
-        # log "Killing (-9) ffmpeg process with PID ${ffmpeg_pid}"
-        kill -9 "${ffmpeg_pid}"
+        # log "Killing (-15) ffmpeg process with PID ${ffmpeg_pid}"
+        kill -15 "${ffmpeg_pid}"
     # else
     #     log "No running ffmpeg process found to kill"
     fi
-    # log "Killing (-9) ${FFMPEG_SCRIPT} with PID ${ffmpeg_script_pid}"
-    kill -9 ${ffmpeg_script_pid}
+    # log "Killing (-15) ${FFMPEG_SCRIPT} with PID ${ffmpeg_script_pid}"
+    kill -15 ${ffmpeg_script_pid}
 }
 
 launch-ffmpeg() {
@@ -36,15 +36,15 @@ launch-ffmpeg() {
     log-error "Started ${FFMPEG_SCRIPT} with PID ${ffmpeg_script_pid}"
 }
 
-# Function to handle Ctrl+C (SIGINT) signal
+# Function to handle signals
 function graceful_exit {
     log-error "Exiting ${SCRIPT_NAME}..."
     kill-ffmpeg
     exit 0
 }
 
-# Set up signal handler for SIGINT
-trap graceful_exit SIGINT
+# Set up signal handler for SIGINT (Ctrl+c) and SIGTERM (used by systemd)
+trap graceful_exit SIGINT SIGTERM
 
 readonly CPU_THRESHOLD_PERCENT=2
 readonly MONITOR_PERIOD_SEC=300 # Period at which the ffmpeg script will be monitored

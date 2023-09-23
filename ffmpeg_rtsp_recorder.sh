@@ -11,14 +11,15 @@ log-error() {
     log "$*"
 }
 
-# Function to handle Ctrl+C (SIGINT) signal
+# Function to handle signals
 function graceful_exit {
     log-error "Exiting ${SCRIPT_NAME}..."
     exit 0
 }
 
-# Set up signal handler for SIGINT
-trap graceful_exit SIGINT
+# Set up signal handler for SIGINT (Ctrl+c) and SIGTERM (used by systemd & the
+# monitoring script)
+trap graceful_exit SIGINT SIGTERM
 
 # To complete with your informations
 readonly RTSP_URL="rtsp://username:password@192.168.1.10:554/stream1"
