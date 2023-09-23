@@ -1,8 +1,15 @@
 #!/bin/bash
+# set -x # Uncomment for debugging
+
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_PATH="$(realpath "$(dirname "$0")")"
+log() {
+    echo "$(date +'%Y-%m-%d_%H:%M:%S') [${SCRIPT_NAME}:$$]: $*"
+}
 
 # Function to handle Ctrl+C (SIGINT) signal
 function graceful_exit {
-    echo "Terminating the ffmpeg script..."
+    log "Exiting ${SCRIPT_NAME}..."
     exit 0
 }
 
@@ -16,14 +23,18 @@ readonly RECORDING_DURATION_SEC=900 # Duration of each recording in seconds
 readonly MAX_RECORDINGS=2 # +1 recording files will be kept
 readonly FAILURE_COOLDOWN_SEC=1800 # Duration to wait in second after a failure to connect to the stream
 
+log "Script ${SCRIPT_NAME} started (from ${SCRIPT_PATH}/)"
+
 while true; do
     # Delete older recordings if there are more than MAX_RECORDINGS
-    while [ "$(ls -1 "${OUTPUT_FILENAME}"* | wc -l)" -gt "${MAX_RECORDINGS}" ]; do
+    while [ "$(ls -1 "${OUTPUT_FILENAME}"* 2> /dev/null | wc -l)" -gt "${MAX_RECORDINGS}" ]; do
         oldest_recording=$(ls -t "${OUTPUT_FILENAME}"* | tail -n 1)
+        log "Removing old recording: ${oldest_recording}"
         rm "${oldest_recording}"
     done
 
-    RECORDING_FILE="${OUTPUT_FILENAME}$(date +'%Y-%m-%d_%H:%M:%S').mp4"
+    recording_file="${OUTPUT_FILENAME}$(date +'%Y-%m-%d_%H:%M:%S').mp4"
+    log "Starting ffmpeg to record for ${RECORDING_DURATION_SEC}s to ${recording_file}"
     # Record the stream -stimeout to disconnect after that many micro seconds if
     # there is a network issue during connection the RTSP stream (here 10 sec)
     ffmpeg \
@@ -32,13 +43,20 @@ while true; do
         -stimeout 10000000 \
         -t "${RECORDING_DURATION_SEC}" \
         -c:v copy \
-        -y "${RECORDING_FILE}" \
-        > /dev/null 2>&1
+        -y "${recording_file}" \
+        &> /dev/null
 
-    if [ $? -ne 0 ] && [ ! -e "${RECORDING_FILE}" ]; then
+    ffmpeg_ret=$?
+    log "ffmpeg recording ended with ${ffmpeg_ret}"
+    if [ ${ffmpeg_ret} -ne 0 ] && [ ! -e "${recording_file}" ]; then
+        log "ffmpeg ended with error ${ffmpeg_ret}, waiting ${FAILURE_COOLDOWN_SEC}s" \
+            "before restarting recording"
         # ffmpeg encountered an error and the recording file does not exists.
         # Most probably this is due to a connection issue, perhaps the stream is
         # not available, so let's wait a bit before trying again.
         sleep ${FAILURE_COOLDOWN_SEC}
     fi
 done
+
+log "Script ${SCRIPT_NAME} finished"
+exit 0
