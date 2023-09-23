@@ -52,6 +52,8 @@ log "Script ${SCRIPT_NAME} started (from ${SCRIPT_PATH}/)"
 # Initially start ffmpeg
 launch-ffmpeg
 
+# Count the number of times no ffmpeg process was found
+ffmpeg_not_running_count=0
 while true; do
     # Wait for a while before checking CPU utilization
     sleep ${MONITOR_PERIOD_SEC}
@@ -64,8 +66,9 @@ while true; do
         if [ $? -ne 0 ]; then
             # The script has not spawned a child process, it is probably busy
             # doing something else
-            log "No ffmpeg process found running, script is probably doing" \
-                "something else, stop monitoring for now"
+            log "No ffmpeg process found running (${ffmpeg_not_running_count})," \
+                "script is probably doing something else, stop monitoring for now"
+            ((ffmpeg_not_running_count++))
             break
         fi
 
@@ -81,13 +84,20 @@ while true; do
             break;
         fi
 
-        # Wait for a while before checking CPU utilization again
-        sleep ${DEBOUNCE_PERIOD_SEC}
+        # Wait for a while before checking CPU utilization again (increase
+        # debounce time to make sure the periods of the 2 scripts are not
+        # aligned).
+        sleep $((DEBOUNCE_PERIOD_SEC + it))
     done
 
     if [ "${below_threshold_count}" -eq "${DEBOUNCE_COUNT}" ]; then
         # Restart ffmpeg
         log "ffmpeg CPU usage has been below threshold for too long, restarting ffmpeg"
+        kill-ffmpeg
+        launch-ffmpeg
+    elif [ "${ffmpeg_not_running_count}" -eq "${DEBOUNCE_COUNT}" ]; then
+        # Restart ffmpeg
+        log "ffmpeg has not been seen running for too long, restarting ffmpeg"
         kill-ffmpeg
         launch-ffmpeg
     fi
