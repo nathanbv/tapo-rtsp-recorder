@@ -31,9 +31,9 @@ trap graceful_exit SIGINT SIGTERM
 # To complete with your informations
 readonly RTSP_URL="rtsp://username:password@192.168.1.10:554/stream1"
 readonly OUTPUT_FILENAME="${SCRIPT_PATH}/securehome_"
-readonly RECORDING_DURATION_SEC=900 # Duration of each recording in seconds
-readonly MAX_RECORDINGS=2 # +1 recording files will be kept
-readonly FAILURE_COOLDOWN_SEC=1800 # Duration to wait in second after a failure to connect to the stream
+readonly RECORDING_DURATION_SEC=1200 # Duration of each recording in seconds
+readonly MAX_RECORDINGS=3 # +1 recording files will be kept
+readonly FAILURE_COOLDOWN_SEC=900 # Duration to wait in second after a failure to connect to the stream
 
 log-error "Script ${SCRIPT_NAME} started (from ${SCRIPT_PATH}/)"
 
