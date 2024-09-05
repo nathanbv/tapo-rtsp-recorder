@@ -3,7 +3,11 @@
 # Install script for the Tapo C200 RTSP live video stream recorder service
 # Must be root to run this script
 # Can be run with custom installation configuration:
-# sudo INSTALL_TARGET_USER="${USER}" DEST_PATH="${HOME}/.bin/cam/" LOG_PATH="${HOME}/.bin/cam/logs/" ./install.sh
+# sudo \
+#   INSTALL_TARGET_USER="${USER}" \
+#   DEST_PATH="${HOME}/.bin/tapo-rtsp-recorder/" \
+#   LOG_PATH="${HOME}/.bin/tapo-rtsp-recorder/logs/" \
+#   ./install.sh
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(realpath "$(dirname "$0")")"

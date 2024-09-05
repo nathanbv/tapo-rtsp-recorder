@@ -6,25 +6,33 @@ readonly FFMPEG_SCRIPT="ffmpeg_rtsp_recorder.sh" # Path to the script using ffmp
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(realpath "$(dirname "$0")")"
+readonly SCRIPT_PID="$$"
+readonly LOG_HEADER="$(printf "%-24s - %-5d" ${SCRIPT_NAME} ${SCRIPT_PID})"
+
+_log() {
+    echo "$(date +'%Y-%m-%d_%H-%M-%S') [${LOG_HEADER}] $*"
+}
+
 log() {
-    echo "$(date +'%Y-%m-%d_%H:%M:%S') [${SCRIPT_NAME}:$$]: $*"
+    _log "INFO:  $*"
 }
 
 log-error() {
-    log "$*"
+    _log "ERROR: $*"
 }
 
 kill-ffmpeg() {
+    local SIGTERM="-15"
     # Forcefully terminate ffmpeg process and the script that launched it
     ffmpeg_pid=$(pgrep --parent ${ffmpeg_script_pid})
     if [ $? -eq 0 ]; then
-        # log "Killing (-15) ffmpeg process with PID ${ffmpeg_pid}"
-        kill -15 "${ffmpeg_pid}"
-    # else
-    #     log "No running ffmpeg process found to kill"
+        log "Killing (${SIGTERM}) ffmpeg process with PID ${ffmpeg_pid}"
+        kill "${SIGTERM}" "${ffmpeg_pid}" &> log
+    else
+        log "No running ffmpeg process found to kill"
     fi
-    # log "Killing (-15) ${FFMPEG_SCRIPT} with PID ${ffmpeg_script_pid}"
-    kill -15 ${ffmpeg_script_pid}
+    log "Killing (${SIGTERM}) ${FFMPEG_SCRIPT} with PID ${ffmpeg_script_pid}"
+    kill "${SIGTERM}" "${ffmpeg_script_pid}" &> log
 }
 
 launch-ffmpeg() {
@@ -60,9 +68,10 @@ launch-ffmpeg
 ffmpeg_not_running_count=0
 while true; do
     # Wait for a while before checking CPU utilization
+    log "Next monitoring polling in ${MONITOR_PERIOD_SEC}s"
     sleep ${MONITOR_PERIOD_SEC}
 
-    # log "Start monitoring ffmpeg"
+    log "Start monitoring ffmpeg"
     below_threshold_count=0
     for ((it=1; it<=DEBOUNCE_COUNT; it++)); do
         # Try to find the ffmpeg process spawned by the script
@@ -70,8 +79,8 @@ while true; do
         if [ $? -ne 0 ]; then
             # The script has not spawned a child process, it is probably busy
             # doing something else
-            # log "No ffmpeg process found running (${ffmpeg_not_running_count})," \
-            #     "script is probably doing something else, stop monitoring for now"
+            log "No ffmpeg process found running (${ffmpeg_not_running_count})," \
+                "script is probably doing something else, stop monitoring for now"
             ((ffmpeg_not_running_count++))
             break
         fi
@@ -80,11 +89,11 @@ while true; do
         cpu_utilization=$(top -b -n 1 -p "${ffmpeg_pid}" | grep "${ffmpeg_pid}" | awk '{print $9}' | tr ',' '.')
 
         if [ "$(echo "${cpu_utilization} < ${CPU_THRESHOLD_PERCENT}" | bc)" -eq 1 ]; then
-            # log "ffmpeg CPU usage (${it}) is below threshold: ${cpu_utilization}"
+            log "ffmpeg CPU usage (${it}) is below threshold: ${cpu_utilization}"
             ((below_threshold_count++))
         else
-            # log "ffmpeg CPU usage (${it}) is above threshold: ${cpu_utilization}," \
-            #     "stop monitoring for now"
+            log "ffmpeg CPU usage (${it}) is above threshold: ${cpu_utilization}," \
+                "stop monitoring for now"
             break;
         fi
 
@@ -104,6 +113,8 @@ while true; do
         log-error "ffmpeg has not been seen running for too long, restarting ffmpeg"
         kill-ffmpeg
         launch-ffmpeg
+    else
+        log "ffmpeg is running and active"
     fi
 done
 
