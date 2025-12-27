@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 # Install script for the Tapo C200 RTSP live video stream recorder service
 # Must be root to run this script
